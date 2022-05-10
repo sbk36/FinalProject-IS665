@@ -1,6 +1,7 @@
 # Load Libraries --------------------
 library(tidyverse)  # Data wrangling and visualization
 library(rpart)      # Regression trees
+library(pROC)       # Receiver-operator curves
 
 set.seed(1)
 
@@ -54,3 +55,23 @@ precision <- tp / (tp + fp)
 recall <- tp / (tp + fn)
 
 f1 <- 2*(recall * precision) / (recall + precision)
+
+# ROC curve  -----------------------
+# Get prediction probabilities
+predict_prob <- predict(mod, testing, type = "prob")[,2]
+
+# Calculate ROC curve using pROC package
+mod_roc <- roc(testing$Outcome, predict_prob)
+
+# Plot with ggplot
+ggroc(mod_roc) +
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), linetype="dashed") +
+  annotate("text",label = paste("AUC:",round(auc(mod_roc), 3)), x = 0.7, y=0.5) +
+  labs(title = "Decision tree model performance",
+       y = "True positive rate",
+       x = "False positive rate") +
+  theme_minimal()
+ggsave("ROC-plot.png", height = 5, width = 5)
+
+# Area under curve
+auc(mod_roc)
